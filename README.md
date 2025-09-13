@@ -95,7 +95,6 @@ Choose your preferred setup method:
 
 - [**Local Development**](#-local-development-setup) - Run directly on your machine
 - [**Docker Development**](#-docker-development-setup) - Run with Docker Compose
-- [**Production Deployment**](#-production-deployment) - Deploy to other machines
 
 ---
 
