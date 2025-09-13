@@ -227,7 +227,3 @@ curl -X POST http://localhost:8080/api/v1/media \
 ```
 
 ---
-
-
-
-**Made with ❤️ using Go 1.22**
