@@ -230,20 +230,22 @@ docker push your-registry.com/cms-backend:v1.0.0
 ```
 
 **Option B: Using Local Image File (No Internet Required)**
-```bash
-# Build the image
-docker build -t cms-backend:latest .
 
-# Save image to tar file
-docker save -o cms-backend.tar cms-backend:latest
+Create the image file:
+```bash
+# Build the image first
+docker build -t cms-backend .
+
+# Save the image to a tar file
+docker save cms-backend:latest -o cms-backend-docker-image.tar
 
 # Compress the tar file (optional, reduces size)
-gzip cms-backend.tar
+gzip cms-backend-docker-image.tar
 ```
 
 #### 2. Deploy on Another Machine
 
-**Option A: Using Docker Compose (Recommended)**
+**Option A: Using Docker Registry (Internet Required)**
 ```bash
 # On the target machine
 git clone <repository-url>
@@ -256,7 +258,37 @@ cd content_management_system_api
 docker-compose up -d
 ```
 
-**Option B: Manual Docker Run**
+**Option B: Using Local Image File (No Internet Required)**
+
+Load and run on another machine:
+```bash
+# Load the pre-built image (copy the .tar file to the target machine first)
+docker load -i cms-backend-docker-image.tar
+
+# Start PostgreSQL database
+docker run -d --name postgres-cms \
+  -e POSTGRES_DB=cms_db \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=your_secure_password \
+  -p 5432:5432 \
+  -v postgres_data:/var/lib/postgresql/data \
+  postgres:15-alpine
+
+# Run the CMS backend container
+docker run -d --name cms-backend \
+  --link postgres-cms:postgres \
+  -e ENV=production \
+  -e DB_HOST=postgres \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=your_secure_password \
+  -e DB_NAME=cms_db \
+  -p 8080:8080 \
+  --restart unless-stopped \
+  cms-backend:latest
+```
+
+**Option C: Manual Docker Run with Registry**
 ```bash
 # Start PostgreSQL
 docker run -d --name postgres-cms \
@@ -281,7 +313,76 @@ docker run -d --name cms-backend \
   your-registry.com/cms-backend:v1.0.0
 ```
 
-#### 3. Production Environment Variables
+#### 3. Complete Deployment Package (Recommended for Offline Deployment)
+
+Create a complete deployment package that includes everything needed:
+
+```bash
+# Build the image
+docker build -t cms-backend .
+
+# Save image to tar file
+docker save cms-backend:latest -o cms-backend-docker-image.tar
+
+# Compress the image
+gzip cms-backend-docker-image.tar
+
+# Create deployment directory
+mkdir cms-deployment
+cd cms-deployment
+
+# Copy necessary files
+cp ../cms-backend-docker-image.tar.gz .
+cp ../docker-compose.yml .
+cp ../.env.example .
+
+# Create production docker-compose override
+cat > docker-compose.prod.yml << 'EOF'
+version: '3.8'
+services:
+  cms-backend:
+    image: cms-backend:latest
+    environment:
+      ENV: production
+EOF
+
+# Create deployment script
+cat > deploy.sh << 'EOF'
+#!/bin/bash
+echo "Loading Docker image..."
+docker load -i cms-backend-docker-image.tar.gz
+
+echo "Starting services..."
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+echo "Deployment complete! API available at http://localhost:8080"
+EOF
+
+chmod +x deploy.sh
+
+# Create deployment package
+cd ..
+tar -czf cms-deployment.tar.gz cms-deployment/
+```
+
+**Deploy on target machine:**
+```bash
+# Transfer deployment package
+scp cms-deployment.tar.gz user@target-machine:/path/to/destination/
+
+# On target machine
+tar -xzf cms-deployment.tar.gz
+cd cms-deployment
+
+# Edit environment variables
+cp .env.example .env
+nano .env
+
+# Run deployment
+./deploy.sh
+```
+
+#### 4. Production Environment Variables
 ```env
 ENV=production
 DB_HOST=postgres
