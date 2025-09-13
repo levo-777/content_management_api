@@ -10,18 +10,6 @@ This API provides a clean and efficient way to manage content through RESTful en
 - **Posts**: Dynamic blog-style posts with author information  
 - **Media**: File attachments and media resources
 
-## ✨ Features
-
-- **Minimalistic Design**: Simple, clean API with no bloat
-- **RESTful API**: Standard HTTP methods and status codes
-- **PostgreSQL Integration**: Robust database with ACID compliance
-- **GORM ORM**: Type-safe database operations
-- **Auto Migrations**: Database schema management
-- **Environment Configuration**: Flexible deployment options
-- **Comprehensive Testing**: Unit and integration tests
-- **Docker Ready**: Containerized deployment
-- **Health Checks**: Built-in monitoring endpoints
-
 ## 🛠 Tech Stack
 
 - **Backend**: Go 1.22
